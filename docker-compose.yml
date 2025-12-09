@@ -8,4 +8,20 @@ services:
             - "8000:8000"
         volumes:
             - .:/app
-        # 之後會在這裡加 env_file / environment 來放 DB 連線字串
+        depends_on:
+            - db
+        env_file:
+            - .env # 這裡之後放 DATABASE_URL 等設定
+
+    db:
+        image: postgres:15
+        container_name: split-bill-db
+        environment:
+            POSTGRES_USER: admin
+            POSTGRES_PASSWORD: test12345
+            POSTGRES_DB: app_db
+        ports:
+            - "5432:5432"
+        volumes:
+            - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+            # 沒有掛 /var/lib/postgresql/data => 資料不會永久化
