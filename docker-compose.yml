@@ -1,9 +1,11 @@
 version: "3.9"
 
 services:
-  api:
-    build: .
-    container_name: split-bill-api
-    ports:
-      - "8000:8000"
-    # 之後會在這裡加 env_file / environment 來放 DB 連線字串
+    api:
+        build: .
+        container_name: split-bill-api
+        ports:
+            - "8000:8000"
+        volumes:
+            - .:/app
+        # 之後會在這裡加 env_file / environment 來放 DB 連線字串
