@@ -2,14 +2,28 @@ from typing import Union, Any
 from dataclasses import dataclass, field
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from app.backstage.router import router as admin_api_router
+from app.backstage.views import router as admin_view_router
+
 
 app = FastAPI()
+
+
+templates = Jinja2Templates(directory="app/templates")
+
+
+app.include_router(admin_api_router)
+app.include_router(admin_view_router)
+
 
 @dataclass
 class Pagination:
     page: int = 1
     size: int = 10
+
 
 @dataclass
 class StatusBase:
@@ -43,6 +57,7 @@ def read_item(item_id: int, q: Union[str, None] = None):
 @app.put("/items/{item_id}")
 def update_item(item_id: int, item: Item):
     return {"item_name": item.name, "item_id": item_id}
+
 
 @app.get("/test")
 def read_test():
