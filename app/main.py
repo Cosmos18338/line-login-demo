@@ -1,21 +1,17 @@
-from typing import Union, Any
-from dataclasses import dataclass, field
-
+import os
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
-from app.backstage.router import router as admin_api_router
-from app.backstage.views import router as admin_view_router
+from starlette.middleware.sessions import SessionMiddleware
+
 from app.api.default import router as default_router
+from app.api.auth import router as auth_router
 
+app = FastAPI(title="Accounting App API")
 
-app = FastAPI()
+# Session middleware：state CSRF 驗證需要，secret 務必存進 .env
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.getenv("SESSION_SECRET", "change-this-secret"),
+)
 
-
-templates = Jinja2Templates(directory="app/templates")
-
-
-app.include_router(admin_api_router)
-app.include_router(admin_view_router)
 app.include_router(default_router)
+app.include_router(auth_router)
