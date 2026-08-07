@@ -6,13 +6,15 @@ from app.db import get_db
 from app.models.db.user import User
 from app.services import auth_service
 
-_bearer = HTTPBearer()
+_bearer = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(_bearer),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     db: Session = Depends(get_db),
 ) -> User:
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=401, detail="無效的登入憑證")
     token = credentials.credentials
     try:
         user_id = auth_service.decode_access_token(token)
