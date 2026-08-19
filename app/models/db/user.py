@@ -29,8 +29,8 @@ class UserOAuthBinding(Base):
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
     )
-    provider = Column(String(20), nullable=False)            # 'line' | 'google'
-    provider_user_id = Column(String(100), nullable=False)   # LINE sub / Google sub
+    provider = Column(String(20), nullable=False)  # 'line' | 'google'
+    provider_user_id = Column(String(100), nullable=False)  # LINE sub / Google sub
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="oauth_bindings")
