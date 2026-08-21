@@ -3,7 +3,7 @@ version: "3.9"
 services:
     api:
         build: .
-        container_name: split-bill-api
+        container_name: line-login-api
         ports:
             - "8000:8000"
         volumes:
@@ -15,7 +15,7 @@ services:
 
     db:
         image: postgres:15
-        container_name: split-bill-db
+        container_name: line-login-db
         environment:
             POSTGRES_USER: admin
             POSTGRES_PASSWORD: test12345

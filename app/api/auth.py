@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.services import auth_service
+from app.api.deps import get_current_user
+from app.models.db.user import User
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -47,3 +49,12 @@ async def line_callback(
     # Step 4：簽發 JWT，導回前端
     token = auth_service.create_access_token(str(user.id))
     return RedirectResponse(f"{FRONTEND_URL}/login/callback?token={token}")
+
+
+@router.get("/me")
+async def get_my_profile(current_user: User = Depends(get_current_user)):
+    """回傳目前登入使用者的基本資料，展示JWT驗證機制"""
+    return {
+        "id": str(current_user.id),
+        "user_name": current_user.user_name,
+    }
