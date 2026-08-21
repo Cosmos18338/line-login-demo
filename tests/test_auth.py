@@ -8,6 +8,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+import uuid
+
 os.environ.setdefault("DB_USER", "admin")
 os.environ.setdefault("DB_PASSWORD", "test12345")
 os.environ.setdefault("DB_HOST", "localhost")
@@ -129,3 +131,16 @@ def test_get_my_profile_with_expired_token_returns_401(client, test_user):
 
     assert response.status_code == 401
     assert response.json() == {"detail": "登入已過期，請重新登入"}
+
+
+def test_get_my_profile_with_valid_jwt_but_user_not_found_returns_401(client):
+    nonexistent_user_id = str(uuid.uuid4())
+    token = auth_service.create_access_token(nonexistent_user_id)
+
+    response = client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "使用者不存在"}
