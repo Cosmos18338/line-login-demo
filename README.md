@@ -1,108 +1,119 @@
 # LINE Login Demo — FastAPI JWT Authentication
 
-一個以 **FastAPI** 實作的第三方登入（LINE Login）與 JWT 驗證機制範例專案，展示從 OAuth2 授權流程、使用者資料寫入、JWT 簽發，到受保護路由驗證的完整後端實作。
+English | [繁體中文](README.zh-TW.md)
 
-## 專案背景
+A backend demo built with **FastAPI** that implements third-party login (LINE Login) and JWT authentication end to end: the OAuth2 authorization flow, user persistence, JWT issuance, and protected-route verification.
 
-本專案抽離自個人開發中的分帳應用程式（AABro）,獨立整理出其中的 **Auth 模組**,聚焦展示第三方登入與權限驗證機制的完整實作，不包含分帳相關業務邏輯。
+## Background
 
-## 技術棧
+This project is extracted from a personal expense-splitting app (AABro) I am developing. It isolates the **Auth module** to showcase a complete third-party login and authorization implementation, without any expense-splitting business logic.
 
-| 類別 | 使用技術 |
+## Tech Stack
+
+| Category | Technology |
 |---|---|
-| 後端框架 | FastAPI |
-| 資料庫 | PostgreSQL 15 |
+| Web framework | FastAPI |
+| Database | PostgreSQL 15 |
 | ORM | SQLAlchemy 2.0 |
-| 身份驗證 | LINE Login (OAuth2) + JWT (PyJWT) |
-| 容器化 | Docker、Docker Compose |
-| Session 管理 | Starlette SessionMiddleware（防 CSRF state 驗證用） |
+| Authentication | LINE Login (OAuth2) + JWT (PyJWT) |
+| Containerization | Docker, Docker Compose |
+| Session management | Starlette SessionMiddleware (for CSRF `state` validation) |
+| Testing | Pytest |
 
-## 功能特色
+## Features
 
-- **LINE OAuth2 登入流程**：實作 `state` 參數產生與驗證，防止 CSRF 攻擊。
-- **使用者資料自動建立/查詢（upsert）**：首次登入自動建立使用者與第三方帳號綁定紀錄，重複登入則查詢既有帳號。
-- **JWT 簽發與驗證**：登入成功後簽發帶有效期限的 JWT，並實作對應的過期、格式錯誤例外處理。
-- **受保護路由範例（`/api/auth/me`）**：展示如何透過 FastAPI 的 Dependency Injection（`Depends`）保護需要登入才能存取的端點。
+- **LINE OAuth2 login flow**: generates and validates the `state` parameter to prevent CSRF attacks.
+- **User upsert**: on first login, creates the user and the third-party account binding; on subsequent logins, looks up the existing account.
+- **JWT issuance and verification**: issues a JWT with an expiry after successful login, with explicit handling for expired and malformed tokens.
+- **Protected route example (`/api/auth/me`)**: shows how to protect endpoints using FastAPI dependency injection (`Depends`).
+- **Test coverage of auth logic**: Pytest cases cover all four branches of the authentication dependency.
 
-## 專案架構
+## Project Structure
 
 ```
 app/
 ├── api/
-│   ├── auth.py      # LINE 登入與 callback 路由
-│   └── deps.py      # 驗證用 Dependency（get_current_user）
+│   ├── auth.py          # LINE login and callback routes
+│   └── deps.py          # Auth dependency (get_current_user)
 ├── models/
 │   └── db/
-│       └── user.py  # User / UserOAuthBinding 資料表定義
+│       └── user.py      # User / UserOAuthBinding table definitions
 ├── services/
-│   └── auth_service.py  # OAuth 交換、JWT 簽發解碼等核心邏輯
+│   └── auth_service.py  # Core logic: OAuth token exchange, JWT encode/decode
 ├── db.py
 └── main.py
 postgres/
-└── init.sql          # 資料庫初始化建表腳本
+└── init.sql             # Database initialization script
+tests/                   # Pytest test suite
 ```
 
-**分層設計說明**：`api/` 負責處理 HTTP 請求與框架整合（路由、Dependency），`services/` 存放不依賴 FastAPI 框架、可獨立測試的純業務邏輯，兩者職責分離。
+**Layered design**: `api/` handles HTTP requests and framework integration (routes, dependencies), while `services/` holds framework-independent business logic that can be tested in isolation.
 
-## 環境需求
+## Prerequisites
 
 - Docker / Docker Compose
-- LINE Developers 帳號（申請 LINE Login Channel，取得 Channel ID / Secret）
+- A LINE Developers account with a LINE Login channel (Channel ID / Channel Secret)
 
-## 啟動方式
+## Getting Started
 
-1. 複製環境變數範本並填入實際值：
+1. Copy the environment template and fill in real values:
 
 ```bash
 cp .env.example .env
 ```
 
-編輯 `.env`，填入 `LINE_CHANNEL_ID`、`LINE_CHANNEL_SECRET`、`JWT_SECRET` 等變數。
+Edit `.env` and set `LINE_CHANNEL_ID`, `LINE_CHANNEL_SECRET`, `JWT_SECRET`, and other variables.
 
-2. 建置並啟動容器：
+2. Build and start the containers:
 
 ```bash
 docker compose up --build
 ```
 
-3. 開啟瀏覽器前往 `http://localhost:8000/docs` 查看互動式 API 文件。
+3. Open `http://localhost:8000/docs` for the interactive API docs.
 
-## API 端點
+## API Endpoints
 
-| 方法 | 路徑 | 說明 | 是否需要驗證 |
+| Method | Path | Description | Auth required |
 |---|---|---|---|
-| GET | `/api/health` | 服務健康檢查 | 否 |
-| GET | `/api/db-check` | 資料庫連線檢查 | 否 |
-| GET | `/api/auth/line` | 導向 LINE 授權頁 | 否 |
-| GET | `/api/auth/line/redirect` | LINE 授權完成後的 callback，簽發 JWT | 否 |
-| GET | `/api/auth/me` | 回傳目前登入使用者資料 | **是（Bearer Token）** |
+| GET | `/api/health` | Service health check | No |
+| GET | `/api/db-check` | Database connectivity check | No |
+| GET | `/api/auth/line` | Redirects to the LINE authorization page | No |
+| GET | `/api/auth/line/redirect` | LINE callback; issues a JWT | No |
+| GET | `/api/auth/me` | Returns the current user's profile | **Yes (Bearer token)** |
 
-## 測試方式
+## Testing
 
-**方式一：Swagger UI**
-1. 完成 LINE 登入流程，從導回網址取得 JWT。
-2. 於 `/docs` 頁面點擊右上角「Authorize」，貼上 JWT。
-3. 呼叫 `/api/auth/me`，確認回傳使用者資料。
+**Option 1: Swagger UI**
+1. Complete the LINE login flow and copy the JWT from the redirect URL.
+2. On `/docs`, click **Authorize** and paste the JWT.
+3. Call `/api/auth/me` and confirm the user data is returned.
 
-**方式二：命令列**
+**Option 2: Command line**
 
 ```bash
-curl -H "Authorization: Bearer <你的JWT>" http://localhost:8000/api/auth/me
+curl -H "Authorization: Bearer <your JWT>" http://localhost:8000/api/auth/me
 ```
 
-**驗證涵蓋情境**：
-- 帶有效 token → 回傳 `200` 與使用者資料
-- 未帶 token → 回傳 `401`
-- 帶無效/竄改 token → 回傳 `401`
-- token 過期 → 回傳 `401` 並提示需重新登入
+**Option 3: Automated tests**
 
-## 已知限制與未來改進方向
+```bash
+pytest
+```
 
-本專案為技術展示用途，以下為刻意簡化、但已知的技術債：
+**Covered scenarios**:
+- Valid token → `200` with user data
+- Missing token → `401`
+- Invalid or tampered token → `401`
+- Expired token → `401` with a re-login prompt
 
-- **LINE id_token 未驗證簽章**：目前僅解碼 payload（`verify_signature=False`），正式環境應改用 LINE 公開的 JWKS 金鑰驗證簽章。
-- **JWT 透過 URL query string 傳遞給前端**：目前 callback 完成後將 token 附加於導回網址，屬於demo 階段的簡化做法；正式產品建議改用 `httpOnly` + `secure` cookie 搭配 CSRF token，避免 token 暴露於瀏覽器歷史紀錄或伺服器日誌中。
-- **JWT_SECRET 有預設值**：正式部署時務必於 `.env` 中覆寫為隨機生成的高強度密鑰。
+## Known Limitations and Future Improvements
+
+This is a demo project. The following simplifications are intentional and known:
+
+- **LINE `id_token` signature is not verified**: the payload is only decoded (`verify_signature=False`). In production, verify the signature using LINE's public JWKS keys.
+- **JWT is passed to the frontend via URL query string**: after the callback, the token is appended to the redirect URL as a demo-stage shortcut. In production, use an `httpOnly` + `secure` cookie with a CSRF token to avoid exposing the token in browser history or server logs.
+- **`JWT_SECRET` has a default value**: always override it in `.env` with a randomly generated, strong secret before deployment.
 
 ## License
 
